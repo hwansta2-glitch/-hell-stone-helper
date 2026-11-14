@@ -20,7 +20,7 @@ export const onlyPost = (req, res) => {
   fail(res, 405, 'POST로 보내야 합니다.')
   return false
 }
-export const configured = () => !!process.env.BLOB_READ_WRITE_TOKEN
+export const configured = () => !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID)
 
 /* ---------- 관리자 세션 (비밀번호로 서명한 쿠키) ---------- */
 const secret = () => `${process.env.ADMIN_PASSWORD ?? ''}|${process.env.SESSION_SECRET ?? 'hellstone'}`
