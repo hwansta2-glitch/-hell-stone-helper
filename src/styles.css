@@ -136,6 +136,9 @@ h3 {
   align-items: center;
   gap: 12px;
   padding: 10px clamp(14px, 4vw, 40px);
+  padding-top: calc(10px + env(safe-area-inset-top));
+  padding-left: calc(clamp(14px, 4vw, 40px) + env(safe-area-inset-left));
+  padding-right: calc(clamp(14px, 4vw, 40px) + env(safe-area-inset-right));
   background: color-mix(in srgb, var(--bg) 86%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line-soft);
@@ -3194,3 +3197,80 @@ a.chip {
 .cmp-verdict b { color: var(--fire-2); }
 .cmp-verdict.is-max b { color: var(--gold); }
 .cmp-verdict.is-min b { color: var(--ash); }
+
+/* ===== PWA 설치 버튼 & 모바일 웹앱 최적화 ===== */
+.install-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.install-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 11px;
+  border: 1px solid var(--fire);
+  background: var(--fire-soft);
+  color: var(--fire-2);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.install-btn:hover {
+  background: color-mix(in srgb, var(--fire) 20%, transparent);
+}
+.install-hint {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(280px, 78vw);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  z-index: 40;
+}
+.install-hint b {
+  color: var(--fire-2);
+}
+.install-hint p {
+  margin: 6px 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.install-hint-x {
+  width: 100%;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--card-2);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 좁은 화면에서는 아이콘만 */
+@media (max-width: 560px) {
+  .install-btn {
+    padding: 0 11px;
+    font-size: 0;
+    gap: 0;
+  }
+  .install-btn span {
+    font-size: 17px;
+  }
+}
+
+/* 설치형(standalone) 실행 시: 하단 안전영역 확보 + 당겨서 새로고침 방지 느낌 */
+.site {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: none;
+  }
+}

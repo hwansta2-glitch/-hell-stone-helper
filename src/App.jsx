@@ -154,6 +154,7 @@ export default function App() {
           <span />
           <span />
         </button>
+        <InstallButton />
         <button type="button" className="theme-btn" aria-label={theme === 'dark' ? '밝은 화면으로' : '어두운 화면으로'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           {theme === 'dark' ? '☀' : '☾'}
         </button>
@@ -178,6 +179,69 @@ export default function App() {
       <footer className="foot">
         스톤에이지 팬 도구 · 수치는 커뮤니티 자료 기준이며 실제와 다를 수 있습니다 · <a href="#submit/pet">도감 추가하기</a> · <a href="#review">관리자</a>
       </footer>
+    </div>
+  )
+}
+
+// PWA 설치 버튼: 크롬/엣지(데스크톱·안드로이드)는 네이티브 설치 프롬프트,
+// iOS 사파리는 '홈 화면에 추가' 안내를 띄운다.
+function InstallButton() {
+  const [deferred, setDeferred] = useState(null)
+  const [installed, setInstalled] = useState(false)
+  const [hint, setHint] = useState(false)
+  const standalone = typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true)
+  const isIOS = typeof navigator !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent)
+
+  useEffect(() => {
+    const onPrompt = (e) => {
+      e.preventDefault()
+      setDeferred(e)
+    }
+    const onInstalled = () => {
+      setInstalled(true)
+      setDeferred(null)
+      setHint(false)
+    }
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
+
+  if (installed || standalone) return null
+  // 설치 프롬프트도 없고 iOS도 아니면(이미 설치했거나 미지원 브라우저) 버튼 숨김
+  if (!deferred && !isIOS) return null
+
+  const onClick = async () => {
+    if (deferred) {
+      deferred.prompt()
+      try {
+        await deferred.userChoice
+      } catch (e) {}
+      setDeferred(null)
+      return
+    }
+    setHint((v) => !v)
+  }
+
+  return (
+    <div className="install-wrap">
+      <button type="button" className="install-btn" onClick={onClick} aria-haspopup={isIOS ? 'dialog' : undefined} aria-expanded={isIOS ? hint : undefined}>
+        <span aria-hidden="true">📥</span> 앱 설치
+      </button>
+      {isIOS && hint && (
+        <div className="install-hint" role="dialog" aria-label="홈 화면에 추가 방법">
+          <b>홈 화면에 추가</b>
+          <p>
+            사파리 아래쪽 <b>공유</b> <span aria-hidden="true">⬆️</span> 버튼을 누르고 <b>‘홈 화면에 추가’</b>를 선택하세요.
+          </p>
+          <button type="button" className="install-hint-x" onClick={() => setHint(false)}>
+            닫기
+          </button>
+        </div>
+      )}
     </div>
   )
 }
