@@ -142,3 +142,51 @@ export function refineUntil(from, to, rnd = Math.random) {
   }
   return { tries, failures, stone, materials }
 }
+
+/* ---------- 강화 역산: 강화된 아이템의 +0 기본 옵션 구하기 ---------- */
+// 강화 가능한 부위 → 보너스 종류
+export const ENHANCEABLE = { 무기: '무기', 투구: '방어구', 갑옷: '방어구' }
+export const ENHANCE_LEVELS = Array.from({ length: 11 }, (_, i) => i) // 0~10
+
+// 강화가 올려 주는 옵션만 보너스를 받는다
+const BONUS_TABLE = {
+  무기: { 공격: MAIN, 관통: PIERCE, 명중: HIT },
+  방어구: { 방어: MAIN, 쉴드: SHIELD, 내구: HP },
+}
+
+export const bonusAt = (kind, stat, level) => (level > 0 && BONUS_TABLE[kind]?.[stat] ? BONUS_TABLE[kind][stat][level - 1] : 0)
+
+// 맥옵(최대 옵션): 양수는 가장 크게, 음수는 0에 가장 가깝게 → 둘 다 범위의 max
+// 최저옵: 그 반대 → 범위의 min
+// 범위 안에서 base가 얼마나 좋은지 (1=맥옵, 0=최저)
+export function rollQuality(base, min, max) {
+  if (max === min) return null
+  return Math.max(0, Math.min(1, (base - min) / (max - min)))
+}
+
+// 아이템 + 강화수치 → 옵션별 역산 필드
+export function reverseFields(item, level) {
+  const kind = ENHANCEABLE[item.category]
+  const b = (stat) => bonusAt(kind, stat, level)
+  const have = new Set(item.stats.map((s) => s.stat))
+
+  const base = item.stats.map((s) => {
+    const ranged = Number.isFinite(s.min) && Number.isFinite(s.max) && s.min !== s.max
+    const lo = ranged ? Math.min(s.min, s.max) : s.value
+    const hi = ranged ? Math.max(s.min, s.max) : s.value
+    return { stat: s.stat, rangeMin: lo, rangeMax: hi, fixed: !ranged, affected: !!BONUS_TABLE[kind]?.[s.stat], bonus: b(s.stat), enhanceOnly: false }
+  })
+  // 강화로만 생기는 옵션 (아이템 기본에 없던 관통/명중/쉴드/내구 등)
+  const added = Object.keys(BONUS_TABLE[kind] ?? {})
+    .filter((stat) => b(stat) > 0 && !have.has(stat))
+    .map((stat) => ({ stat, rangeMin: 0, rangeMax: 0, fixed: true, affected: true, bonus: b(stat), enhanceOnly: true }))
+
+  return { kind, fields: [...base, ...added] }
+}
+
+// 현재(강화된) 표시값 → +0 기본값. value 없으면 맥옵(최대)으로 본다
+export function toBase(field, value) {
+  const shown = Number.isFinite(value) ? value : field.rangeMax + field.bonus
+  const baseVal = shown - field.bonus
+  return { ...field, shown, base: baseVal, quality: rollQuality(baseVal, field.rangeMin, field.rangeMax) }
+}

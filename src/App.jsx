@@ -9,6 +9,7 @@ import { DropsPage, QuizPage, ReversePage, SimPage } from './pages/Tools'
 import EnhancePage from './pages/Enhance'
 import { DuelPage, OrderPage } from './pages/Duel'
 import { SubmitPage, ReviewPage } from './pages/Submit'
+import UnenhancePage from './pages/Unenhance'
 import { store } from './lib/format'
 import { dataVersion, mergeEntries, subscribeData } from './lib/data'
 import { fetchEntries } from './lib/api'
@@ -48,6 +49,7 @@ const MENU = [
       { id: 'drops', label: '득템 시뮬레이터', view: () => <DropsPage /> },
       { id: 'quiz', label: '퀴즈 도우미', view: () => <QuizPage /> },
       { id: 'reverse', label: '스탯 역산', view: () => <ReversePage /> },
+      { id: 'unenhance', label: '강화 역산', view: () => <UnenhancePage /> },
       { id: 'duel', label: '듀얼 도우미', view: () => <DuelPage /> },
       { id: 'order', label: '듀얼오더 도우미', view: () => <OrderPage /> },
     ],
