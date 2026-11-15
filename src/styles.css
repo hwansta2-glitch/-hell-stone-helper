@@ -758,6 +758,7 @@ legend {
 /* ---------- 펫 검색 ---------- */
 .picker {
   position: relative;
+  min-width: 0;
 }
 .picker-field {
   display: flex;
@@ -774,6 +775,7 @@ legend {
 }
 .picker-field input {
   flex: 1;
+  min-width: 0;
   border: 0;
   background: none;
   padding: 7px 0;
@@ -964,12 +966,16 @@ legend {
 }
 .hero-search {
   width: min(560px, 100%);
+  min-width: 0;
+  max-width: 100%;
   display: grid;
   gap: 8px;
   margin-top: 10px;
 }
 .recent {
   width: min(560px, 100%);
+  min-width: 0;
+  max-width: 100%;
   display: grid;
   gap: 8px;
   margin-top: 16px;
@@ -3273,4 +3279,47 @@ a.chip {
   body {
     overscroll-behavior-y: none;
   }
+}
+
+/* ===== 관리자 수정 폼 ===== */
+.edit-form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  display: grid;
+  gap: 10px;
+}
+.edit-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.edit-row > span {
+  flex: 0 0 56px;
+  padding-top: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--muted);
+}
+.edit-img-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.edit-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card-2);
+  image-rendering: pixelated;
+}
+.edit-img-ctl {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  flex: 1;
 }

@@ -3,7 +3,7 @@ import { ATTR_ICON, ATTRS, attrText, ITEM_CATEGORIES, ITEM_STATS, itemImage, ite
 import { calcHwan, fitBase, totalGrowth } from '../lib/hwan'
 import { cappedPct } from '../lib/format'
 import { IMAGE_TOO_BIG, itemErrors, MAX_IMAGE_BYTES, petErrors } from '../lib/validate'
-import { fetchQueue, isLoggedIn, login, logout, review, submitEntry } from '../lib/api'
+import { fetchQueue, isLoggedIn, login, logout, review, submitEntry, updateEntry } from '../lib/api'
 import { ItemImg, Note, Panel, PetImg, PetPicker } from '../components/ui'
 
 const STATS = [
@@ -427,9 +427,59 @@ function ItemReview({ item }) {
     </>
   )
 }
-function ReviewCard({ sub, actions, onAct }) {
+function EditForm({ sub, onSave, onCancel }) {
+  const [name, setName] = useState(sub.entry.name)
+  const [file, setFile] = useState(null)
+  const [preview, setPreview] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const pickFile = (f) => {
+    if (!f) return
+    if (f.size > MAX_IMAGE_BYTES) return setErr(IMAGE_TOO_BIG)
+    setErr('')
+    setFile(f)
+    setPreview(URL.createObjectURL(f))
+  }
+  const save = async () => {
+    setBusy(true)
+    const r = await updateEntry(sub.id, { name: name.trim(), file })
+    setBusy(false)
+    if (r.ok) onSave()
+    else setErr(r.errors.join(' '))
+  }
+  const curImg = sub.kind === 'item' ? (sub.entry.image ? itemImage(sub.entry.image) : '') : sub.entry.image || ''
+  return (
+    <div className="edit-form">
+      <label className="edit-row">
+        <span>이름</span>
+        <input type="text" className="text-in grow" value={name} onChange={(e) => setName(e.target.value)} maxLength={30} />
+      </label>
+      <div className="edit-row">
+        <span>이미지</span>
+        <div className="edit-img-area">
+          <img className="edit-img" src={preview || curImg} alt="" />
+          <div className="edit-img-ctl">
+            <input type="file" accept="image/png,image/gif,image/jpeg,image/webp" onChange={(e) => pickFile(e.target.files?.[0])} />
+            <small className="muted">비워두면 기존 이미지를 그대로 둡니다. (gif·png·jpg·webp, 1MB 이하)</small>
+          </div>
+        </div>
+      </div>
+      {err && <p className="error">{err}</p>}
+      <div className="btn-row">
+        <button type="button" className="btn btn-fire btn-sm" disabled={busy || !name.trim()} onClick={save}>
+          {busy ? '저장 중…' : '저장'}
+        </button>
+        <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={onCancel}>
+          취소
+        </button>
+      </div>
+    </div>
+  )
+}
+function ReviewCard({ sub, actions, onAct, onEdited }) {
   const [armed, setArmed] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
   const act = async (action, danger) => {
     if (danger && armed !== action) return setArmed(action)
     setBusy(true)
@@ -442,12 +492,25 @@ function ReviewCard({ sub, actions, onAct }) {
       {sub.kind === 'pet' ? <PetReview pet={sub.entry} /> : <ItemReview item={sub.entry} />}
       <div className="review-actions">
         <small className="muted">{when(sub.createdAt)}</small>
+        <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => setEditing((v) => !v)}>
+          {editing ? '수정 닫기' : '✏ 수정'}
+        </button>
         {actions.map(({ action, label, danger }) => (
           <button key={action} type="button" className={danger ? 'btn btn-ghost btn-sm danger' : 'btn btn-fire btn-sm'} disabled={busy} onClick={() => act(action, danger)}>
             {armed === action ? `정말 ${label}` : label}
           </button>
         ))}
       </div>
+      {editing && (
+        <EditForm
+          sub={sub}
+          onCancel={() => setEditing(false)}
+          onSave={() => {
+            setEditing(false)
+            onEdited()
+          }}
+        />
+      )}
     </li>
   )
 }
@@ -474,6 +537,10 @@ export function ReviewPage() {
   const act = async (id, action) => {
     const r = await review(id, action)
     setMsg(r.ok ? (action === 'approve' ? '승인했습니다. 1~10분 안에 모두에게 보입니다.' : '처리했습니다.') : r.errors.join(' '))
+    await load()
+  }
+  const onEdited = async () => {
+    setMsg('수정했습니다. 승인된 항목은 1~10분 안에 모두에게 반영됩니다.')
     await load()
   }
   if (stage === 'checking') return <p className="empty">확인하는 중입니다.</p>
@@ -531,6 +598,7 @@ export function ReviewPage() {
                 { action: 'reject', label: '거절', danger: true },
               ]}
               onAct={(a) => act(s.id, a)}
+              onEdited={onEdited}
             />
           ))}
         </ul>
@@ -541,7 +609,7 @@ export function ReviewPage() {
       ) : (
         <ul className="review-list">
           {queue.approved.map((s) => (
-            <ReviewCard key={s.id} sub={s} actions={[{ action: 'withdraw', label: '내리기', danger: true }]} onAct={(a) => act(s.id, a)} />
+            <ReviewCard key={s.id} sub={s} actions={[{ action: 'withdraw', label: '내리기', danger: true }]} onAct={(a) => act(s.id, a)} onEdited={onEdited} />
           ))}
         </ul>
       )}

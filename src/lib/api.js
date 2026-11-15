@@ -44,6 +44,8 @@ export const submitEntry = async (kind, entry, file) => post('submit', { kind, e
 export const login = (password) => post('login', { password })
 export const logout = () => post('logout', {})
 export const review = (id, action) => post('review', { id, action })
+export const updateEntry = async (id, { name, file }) =>
+  post('update', { id, name, image: file ? { base64: await fileToBase64(file) } : undefined })
 export async function isLoggedIn() {
   if (!hasServer()) return false
   try {
